@@ -1,0 +1,4 @@
+gradio
+crewai
+pymupdf
+openai
