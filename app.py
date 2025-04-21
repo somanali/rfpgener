@@ -1,6 +1,16 @@
 from openai import OpenAI
 from crewai import Agent, Task, Crew
 import os
+import requests
+import urllib.parse
+from langchain.chat_models import ChatOpenAI
+
+llm_gpt4o = ChatOpenAI(
+    model_name="gpt-4o-mini",
+    temperature=0.4
+)
+
+
 
 def clean_output(text):
     if not isinstance(text, str):
@@ -32,6 +42,7 @@ agent_intro = Agent(
     role="RFP Initiation Specialist",
     goal="Write the Cover Page, Introduction, and Objectives clearly and formally.",
     backstory="You write the opening of all Saudi government RFPs with precision.",
+    llm=llm_gpt4o,
     verbose=False
 )
 
@@ -40,7 +51,8 @@ agent_scope = Agent(
     role="Scope Expert",
     goal="Create detailed scope, deliverables, and timelines.",
     backstory="You focus on defining exact technical and functional expectations.",
-    verbose=False
+    llm=llm_gpt4o,
+    verbose=False,
 )
 
 # Agent C: Evaluation & Eligibility
@@ -48,6 +60,7 @@ agent_eval = Agent(
     role="Procurement Rules Analyst",
     goal="Define eligibility, proposal submission format, and scoring criteria.",
     backstory="You ensure only qualified vendors can apply and proposals are assessed fairly.",
+    llm=llm_gpt4o,
     verbose=False
 )
 
@@ -56,6 +69,7 @@ agent_legal = Agent(
     role="Legal & Financial Officer",
     goal="Draft budget guidelines, legal terms, IP clauses, and confidentiality.",
     backstory="You enforce regulatory compliance in public procurement.",
+    llm=llm_gpt4o,
     verbose=False
 )
 
@@ -64,6 +78,7 @@ agent_supervisor = Agent(
     role="RFP Supervisor",
     goal="Compile and clean the final RFP into a single, formatted document.",
     backstory="You finalize RFPs for official publication.",
+    llm=llm_gpt4o,
     verbose=False
 )
 
@@ -82,6 +97,7 @@ def create_tasks_from_context(context_answers):
     # Task 1: Cover Page, Intro, Objectives
     task_intro = Task(
         description=f"""
+Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 Using the context below, generate:
 - Cover Page
 - Introduction & Background
@@ -109,7 +125,7 @@ Context:
     # Task 2: Scope, Deliverables, Timeline
     task_scope = Task(
         description=f"""
-Write the following RFP sections:
+Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 - Scope of Work
 - Deliverables
 - Project Timeline
@@ -127,6 +143,7 @@ Context:
     # Task 3: Eligibility, Submission Format, Evaluation
     task_eval = Task(
         description=f"""
+Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 Write:
 - Eligibility Criteria
 - Proposal Submission Format
@@ -147,6 +164,7 @@ Context:
     # Task 4: Budget, Legal, Confidentiality
     task_legal = Task(
         description=f"""
+    Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 Generate:
 - Budget/Cost Proposal Format
 - Legal Terms & Conditions
@@ -164,6 +182,7 @@ Context:
     # Supervisor Task
     task_supervisor = Task(
         description="""
+        Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 Combine the outputs from all four agents into one complete RFP document.
 
 Guidelines:
@@ -179,6 +198,7 @@ Guidelines:
 
 def generate_rfp(org, project, outcomes, specs, budget, deadline, additional):
     context = f"""
+    Respond in Modern Standard Arabic (MSA) using a formal tone as used in Saudi government RFPs.
 1. Organization: {org}
 2. Project: {project}
 3. Outcomes: {outcomes}
@@ -186,6 +206,8 @@ def generate_rfp(org, project, outcomes, specs, budget, deadline, additional):
 5. Budget & Timeline: {budget}
 6. Submission Deadline: {deadline}
 7. Additional Info: {additional}
+
+
 """
 
     tasks = create_tasks_from_context(context)
@@ -196,9 +218,11 @@ def generate_rfp(org, project, outcomes, specs, budget, deadline, additional):
         verbose=False
     )
 
-    result = crew.kickoff()
-   # return (result)
-    return clean_output(str(result))
+    english_result = crew.kickoff()
+    english_rfp = clean_output(str(english_result))
+  #  arabic_rfp = translate_to_arabic_google(english_rfp)
+
+    return english_rfp
 
 import gradio as gr
 from pathlib import Path
